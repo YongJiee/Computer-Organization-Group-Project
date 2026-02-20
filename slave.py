@@ -43,6 +43,9 @@ def run_slave():
     print(f"[Slave] Opening UART on {UART_PORT} at {UART_BAUDRATE} baud …")
 
     with serial.Serial(UART_PORT, UART_BAUDRATE, timeout=UART_TIMEOUT) as uart:
+        import time
+        time.sleep(2)
+        uart.reset_input_buffer()
         print("[Slave] UART ready. Waiting for master request …\n")
 
         while True:
@@ -52,8 +55,13 @@ def run_slave():
                 print("[Slave] Timeout waiting for master. Still waiting …")
                 continue
 
+            # Skip empty lines
+            decoded = raw.decode().strip()
+            if not decoded:
+                continue
+
             try:
-                request = json.loads(raw.decode().strip())
+                request = json.loads(decoded)
             except (json.JSONDecodeError, UnicodeDecodeError) as e:
                 print(f"[Slave] Bad data received: {e}. Ignoring.")
                 continue
